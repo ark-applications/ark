@@ -22,8 +22,6 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     let options = Options::parse();
 
-    println!("starting db");
-
     let db_manager = SqliteConnectionManager::memory();
     let db_pool = r2d2::Pool::new(db_manager).unwrap();
     initialize_db(&db_pool).await?;

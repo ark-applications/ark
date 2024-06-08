@@ -36,7 +36,6 @@ pub struct DNSHandler {
 }
 
 fn get_matching_record(db_conn: &PooledConnection<SqliteConnectionManager>, match_on: String, query_name: LowerName) -> Result<(String, String), Error> {
-    println!("matching on: {}", match_on);
     let mut stmt = db_conn.prepare("SELECT record_type, value FROM dns_records WHERE domain_name LIKE ?;").unwrap();
     let db_record = match stmt.query_row([match_on], |r| {
         Ok((r.get::<usize, String>(0).unwrap(), r.get::<usize, String>(1).unwrap()))
