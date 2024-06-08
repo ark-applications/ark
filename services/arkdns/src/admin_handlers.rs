@@ -2,15 +2,13 @@ use std::sync::Arc;
 
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use native_db::Database;
-use serde_json::{json, Value};
-
-use crate::models;
+use serde_json::json;
 
 #[derive(thiserror::Error, Debug)]
 pub enum AdminError {}
 
-pub async fn get_deployment_records(State(db): State<Arc<Database>>) -> impl IntoResponse {
-    Json(json!({ "msg": "getting deployment records" }))
+pub async fn get_deployment_records(State(_db): State<Arc<Database<'_>>>) -> Result<impl IntoResponse, Json<serde_json::Value>> {
+    Ok(Json(json!({ "msg": "getting deployment records" })))
 }
 
 pub async fn create_deployment() -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {

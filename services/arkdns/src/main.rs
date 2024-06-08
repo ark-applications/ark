@@ -1,14 +1,14 @@
 use std::{sync::Arc, time::Duration};
 
-use once_cell::sync::Lazy;
 use anyhow::Result;
-use axum::{routing::{delete, get, post, put}, Extension, Router};
+use axum::{routing::{delete, get, post, put}, Router};
 use clap::Parser;
 use dns_handler::DNSHandler;
-use native_db::{Database, DatabaseBuilder};
+use native_db::Database;
+use once_cell::sync::Lazy;
 use options::Options;
-use serde::{Deserialize, Serialize};
 use tokio::net::{TcpListener, UdpSocket};
+use tokio_rusqlite::Connection;
 use trust_dns_server::ServerFuture;
 
 mod admin_handlers;
@@ -32,12 +32,17 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     let options = Options::parse();
 
+    let db = ADMIN_DATABASE_BUILDER
+        // Create with a file path to persist the database
+        .create_in_memory()
+        .expect("failed to create database");
+
     let dns_server = build_dns_server(&options).await?;
     let dns_task = tokio::spawn(async move {
         dns_server.block_until_done().await
     });
 
-    let admin_server = build_admin_server(&options).await?;
+    let admin_server = build_admin_server(&options, Arc::new(db)).await?;
     let admin_task = tokio::spawn(async move {
         let listener = tokio::net::TcpListener::bind(options.admin_addr).await.unwrap();
         axum::serve(listener, admin_server).await
@@ -48,9 +53,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn build_admin_server(_options: &Options) -> Result<Router> {
-    let mut admin_db = ADMIN_DATABASE_BUILDER.create_in_memory()?;
-
+async fn build_admin_server(_options: &Options, db: Arc<Database<'_>>) -> Result<Router> {
     let admin_api = Router::new()
         .route("/v1/up", get(|| async { "Hello from arkdns" }))
         .route("/v1/stacks/:stack_id/deployments", post(admin_handlers::create_deployment))
@@ -58,7 +61,7 @@ async fn build_admin_server(_options: &Options) -> Result<Router> {
         .route("/v1/stacks/:stack_id/deployments/:deployment_name", delete(admin_handlers::delete_deployment))
         .route("/v1/stacks/:stack_id/deployments/:deployment_name/record", put(admin_handlers::upsert_record))
         .route("/v1/stacks/:stack_id/deployments/:deployment_name/record/:address", delete(admin_handlers::delete_record_by_address))
-        .with_state(Arc::new(admin_db));
+        .with_state(db);
 
     Ok(admin_api)
 }
