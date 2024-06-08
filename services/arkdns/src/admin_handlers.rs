@@ -1,7 +1,7 @@
-use std::sync::Arc;
 
 use axum::{extract::{Path, State}, http::StatusCode, response::IntoResponse, Json};
-use native_db::Database;
+use r2d2::Pool;
+use r2d2_sqlite::SqliteConnectionManager;
 use serde::Deserialize;
 use serde_json::json;
 
@@ -10,56 +10,79 @@ use crate::models;
 #[derive(thiserror::Error, Debug)]
 pub enum AdminError {}
 
-pub async fn get_deployment_records(State(db): State<Arc<Database<'_>>>, Path((stack_name, deployment_name)): Path<(String, String)>) -> Result<impl IntoResponse, Json<serde_json::Value>> {
-    let r = db.r_transaction().expect("failed to create tx");
+pub async fn get_deployment_records(State(db): State<Pool<SqliteConnectionManager>>, Path((stack_id, deployment_name)): Path<(String, String)>) -> Result<impl IntoResponse, Json<serde_json::Value>> {
+    let db_conn = db.get().unwrap();
 
-    let records: Vec<models::Record> = r
-        .scan()
-        .secondary(models::RecordKey::stack_id).expect("key error").range(stack_name..)
-        .collect();
-
-    let response_value: Vec<serde_json::Value> = records
-        .into_iter()
-        .map(|row| {
-            json!(row)
+    let mut stmt = db_conn.prepare("SELECT * FROM dns_records WHERE stack_id = ? AND deployment_name = ?;").unwrap();
+    let records_iter = stmt.query_map([stack_id, deployment_name], |r| {
+        Ok(models::Record{
+            guid: r.get(0)?,
+            stack_id: r.get(1)?,
+            deployment_name: r.get(2)?,
+            app_name: r.get(3)?,
+            record_type: r.get(4)?,
+            domain_name: r.get(5)?,
+            value: r.get(6)?,
         })
-        .collect();
-    Ok(Json(json!({ "records": response_value })))
+    }).unwrap();
+
+    let mut matching_records: Vec<models::Record> = Vec::new();
+    for r in records_iter {
+        matching_records.push(r.unwrap());
+    }
+    Ok(Json(json!({ "records": matching_records })))
 }
 
-pub async fn delete_deployment() -> impl IntoResponse {
-    Json(json!({ "msg": "deleting deployment" }))
+pub async fn delete_deployment(State(db): State<Pool<SqliteConnectionManager>>, Path((stack_id, deployment_name)): Path<(String, String)>) -> impl IntoResponse {
+    let db_conn = db.get().unwrap();
+
+    db_conn.execute(
+        "DELETE FROM dns_records WHERE stack_id = ? AND deployment_name = ?", 
+        [stack_id, deployment_name]
+    ).expect("could not delete deployment");
+
+    Json(json!({ "msg": "deployment deleted" }))
 }
 
 #[derive(Deserialize)]
 pub struct RecordUpsertParams {
-    pub deployment_name: String,
-    pub stack_id: String,
     pub app_name: String,
     pub value: String,
 }
 
-pub async fn upsert_record(State(db): State<Arc<Database<'_>>>, Json(record_params): Json<RecordUpsertParams>) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let rw = db.rw_transaction().unwrap();
+pub async fn upsert_record(State(db): State<Pool<SqliteConnectionManager>>, Path((stack_id, deployment_name)): Path<(String, String)>, Json(record_params): Json<RecordUpsertParams>) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let db_conn = db.get().unwrap();
 
-    rw.insert(models::Record { 
-        guid: 1, 
-        stack_id: record_params.stack_id, 
-        deployment_name: record_params.deployment_name,
-        app_name: record_params.app_name,
-        record_type: "A".to_string(),
-        domain_name: "".to_string(),
-        value: record_params.value,
-    }).expect("could not insert record");
+    let domain_name = format!("{app_name}.{deployment_name}.{stack_id}.", app_name = record_params.app_name);
 
-    rw.commit().expect("failed to commit record upsert");
-    let r = db.r_transaction().unwrap();
+    let created_record = db_conn.query_row(r#"
+            INSERT INTO dns_records (
+                stack_id,
+                deployment_name,
+                app_name,
+                record_type,
+                domain_name,
+                value
+            ) VALUES (?, ?, ?, ?, ?, ?) RETURNING guid, stack_id, deployment_name, app_name, record_type, domain_name, value;
+        "#, 
+        &[
+            &stack_id, 
+            &deployment_name, 
+            &record_params.app_name, 
+            &"A".to_string(),
+            &domain_name.to_string(),
+            &record_params.value,
+        ], |r| {
+            Ok(models::Record {
+                guid: r.get(0)?,
+                stack_id: r.get(1)?,
+                deployment_name: r.get(2)?,
+                app_name: r.get(3)?,
+                record_type: r.get(4)?,
+                domain_name: r.get(5)?,
+                value: r.get(6)?,
+            })
+        }).unwrap();
 
-    let record: models::Record = r.get().primary(1_u32).expect("could not find record").unwrap();
-
-    Ok((StatusCode::OK, Json(record)))
-}
-
-pub async fn delete_record_by_address() -> impl IntoResponse {
-    Json(json!({ "msg": "deleting record by address" }))
+    Ok((StatusCode::OK, Json(created_record)))
 }

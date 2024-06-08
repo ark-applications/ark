@@ -1,12 +1,11 @@
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 use anyhow::Result;
 use axum::{routing::{delete, get, put}, Router};
 use clap::Parser;
 use dns_handler::DNSHandler;
-use native_db::Database;
-use once_cell::sync::Lazy;
 use options::Options;
+use r2d2_sqlite::SqliteConnectionManager;
 use tokio::net::{TcpListener, UdpSocket};
 use trust_dns_server::ServerFuture;
 
@@ -18,33 +17,18 @@ mod options;
 /// Timeout for TCP connections.
 const TCP_TIMEOUT: Duration = Duration::from_secs(10);
 
-static ADMIN_DATABASE_BUILDER: Lazy<native_db::DatabaseBuilder> = Lazy::new(|| {
-    let mut builder = native_db::DatabaseBuilder::new();
-    builder
-        .define::<models::Record>()
-        .expect("failed to define model Record");
-    builder
-});
-
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     let options = Options::parse();
 
-    let db = ADMIN_DATABASE_BUILDER
-        // Create with a file path to persist the database
-        .create_in_memory()
-        .expect("failed to create database");
+    println!("starting db");
 
-    let rw = db
-        .rw_transaction()
-        .expect("failed to create rw migration transaction");
-    rw.migrate::<models::Record>().expect("failed to migrate Record");
-    rw.commit().expect("failed to commit migration");
+    let db_manager = SqliteConnectionManager::memory();
+    let db_pool = r2d2::Pool::new(db_manager).unwrap();
+    initialize_db(&db_pool).await?;
 
-    let shared_db = Arc::new(db);
-
-    let dns_server = build_dns_server(&options, &shared_db).await?;
+    let dns_server = build_dns_server(&options, &db_pool).await?;
     let dns_task = tokio::spawn(async move {
         dns_server.block_until_done().await
     });
@@ -55,8 +39,7 @@ async fn main() -> Result<()> {
         .route("/v1/stacks/:stack_id/deployments/:deployment_name", get(admin_handlers::get_deployment_records))
         .route("/v1/stacks/:stack_id/deployments/:deployment_name", delete(admin_handlers::delete_deployment))
         .route("/v1/stacks/:stack_id/deployments/:deployment_name/record", put(admin_handlers::upsert_record))
-        .route("/v1/stacks/:stack_id/deployments/:deployment_name/record/:address", delete(admin_handlers::delete_record_by_address))
-        .with_state(shared_db);
+        .with_state(db_pool);
 
     // run admin server
     let admin_task = tokio::spawn(async move {
@@ -69,8 +52,29 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn build_dns_server(options: &Options, _db: &Arc<Database<'static>>) -> Result<ServerFuture<DNSHandler>> {
-    let dns_handler = DNSHandler::from_options(&options);
+async fn initialize_db(db: &r2d2::Pool<SqliteConnectionManager>) -> Result<()> {
+    let table_migration = r#"
+        CREATE TABLE IF NOT EXISTS dns_records (
+            guid INTEGER PRIMARY KEY,
+            stack_id TEXT,
+            deployment_name TEXT,
+            app_name TEXT,
+            record_type TEXT,
+            domain_name TEXT,
+            value TEXT
+        );
+    "#;
+
+    db.get()
+        .unwrap()
+        .execute(table_migration, ())
+        .unwrap();
+
+    Ok(())
+}
+
+async fn build_dns_server(options: &Options, db: &r2d2::Pool<SqliteConnectionManager>) -> Result<ServerFuture<DNSHandler>> {
+    let dns_handler = DNSHandler::from_options(&options, db);
 
     // create DNS server
     let mut server = ServerFuture::new(dns_handler);
