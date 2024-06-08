@@ -17,3 +17,8 @@ The `app_name` is optional, the stack will define a `root_app` that {deployment_
 **PUT** `/v1/stacks/{stack_id}/deployments/{deployment_name}/record` - Upserts a record
 **DELETE** `/v1/stacks/{stack_id}/deployments/{deployment_name}/record/{address}` - Deletes all records with the specified address as their value
 **DELETE** `/v1/stacks/{stack_id}/deployments/{deployment_name}` - Deletes all records for a deployment
+
+## References
+
+- https://github.com/EmilHernvall/dnsguide
+- https://dev.to/xfbs/writing-a-dns-server-in-rust-1gpn
