@@ -16,6 +16,6 @@ pub struct Options {
     pub admin_addr: SocketAddr,
 
     /// Domain name
-    #[clap(long, short, default_value = "ark.kimoto.dev", env = "ARKDNS_DOMAIN")]
+    #[clap(long, short, default_value = "internal", env = "ARKDNS_DOMAIN")]
     pub domain: String,
 }
