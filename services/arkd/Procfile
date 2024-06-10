@@ -1,0 +1,3 @@
+worker: bin/start_worker
+proxy: bin/start_proxy
+vector: bin/start_logsink

@@ -11,7 +11,7 @@ type Config struct {
 	ApiPort        int     `json:"api_port"`
 	DefaultTaskCpu float64 `json:"default_task_cpu"`
 	DefaultTaskMem int     `json:"default_task_mem"`
-  WorkerId       string  `json:"worker_id"`
+	WorkerId       string  `json:"worker_id"`
 }
 
 type ConfigFn func(cfg *Config)
@@ -37,7 +37,7 @@ func WithApiVersion(version string) ConfigFn {
 }
 
 func WithWorkerId(wid string) ConfigFn {
-  return func(cfg *Config) {
-    cfg.WorkerId = wid
-  }
+	return func(cfg *Config) {
+		cfg.WorkerId = wid
+	}
 }

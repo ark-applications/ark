@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/dkimot/ark/services/arkd/internal/arkd"
 	"github.com/oklog/ulid/v2"
 )
 
@@ -34,6 +35,10 @@ func status(err error) int {
 	if errors.Is(err, ulid.ErrInvalidCharacters) {
 		return http.StatusBadRequest
 	}
+
+  if errors.Is(err, arkd.ErrNilTask) {
+    return http.StatusNotFound
+  }
 
 	return http.StatusInternalServerError
 }

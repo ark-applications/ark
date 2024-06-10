@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+tail -f tmp/logs/vector-$(date +%F).log

@@ -3,6 +3,7 @@ package arkd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"sync"
@@ -13,6 +14,9 @@ import (
 )
 
 var tasksBucketName = []byte("TasksBucket")
+
+var ErrTaskNotFound = errors.New("task not found")
+var ErrNilTask = errors.New("nil task")
 
 func NewTaskStore(db *bbolt.DB, logger zerolog.Logger) (*TaskStore, error) {
 	// ensure tasks bucket exists
@@ -229,6 +233,10 @@ func listTasksFromBucket(tx *bbolt.Tx) ([]Task, error) {
 }
 
 func readTaskBytes(raw []byte) (Task, error) {
+  if raw == nil {
+    return Task{}, ErrNilTask
+  }
+
 	status, err := strconv.ParseInt(string(raw[0]), 10, 64)
 	if err != nil {
 		return Task{}, err

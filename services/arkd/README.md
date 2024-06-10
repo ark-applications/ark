@@ -1,0 +1,5 @@
+# arkd
+
+## Dependencies
+
+- hivemind

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+# rpxy doesn't like to stop itself so
+# we ensure that if it exists it will
+# be stopped (and subsequently removed)
+echo "stopping arkd-proxy if it exists, this may take a few seconds"
+docker stop arkd-proxy
+
+$ARKD_RUN_ID=$(uuidgen)
+
+echo "starting arkd run $ARKD_RUN_ID"
+
+hivemind

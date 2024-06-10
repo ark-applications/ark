@@ -1,0 +1,12 @@
+default_application = "arkd-status"
+listen_port = 8080
+listen_port_tls = 4443
+
+[apps]
+  [apps.arkd-status]
+    server_name = "arkd-status.internal"
+
+    [[apps.arkd-status.reverse_proxy]]
+
+      [[apps.arkd-status.reverse_proxy.upstream]]
+        location = "localhost:5501"

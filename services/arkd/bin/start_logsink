@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+vector -c $PWD/configs/vector/vector.dev.yaml

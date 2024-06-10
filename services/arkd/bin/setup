@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# used for log sinks
+if ! command -v vector &> /dev/null
+then
+    echo "vector not found, installing now"
+    curl --proto '=https' --tlsv1.2 -sSfL https://sh.vector.dev | bash
+fi
+
+echo "using vector $(vector --version)"
+
+# used for proxy
+docker pull jqtype/rpxy
+
+# go watch tool
+go install github.com/mitranim/gow@latest

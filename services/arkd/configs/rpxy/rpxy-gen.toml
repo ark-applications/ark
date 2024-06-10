@@ -1,0 +1,11 @@
+listen_port = 8080
+listen_port_tls = 8080
+
+[apps]
+  [apps.nginx]
+    server_name = "nginx.ark.internal"
+
+    [[apps.nginx.reverse_proxy]]
+
+      [[apps.nginx.reverse_proxy.upstream]]
+        location = "localhost:3000"

@@ -1,0 +1,21 @@
+api:
+  enabled: true
+  address: 0.0.0.0:8686
+sources:
+  proxy:
+    type: docker_logs
+    include_containers:
+      - arkd-proxy
+  task_docker_logs:
+    type: docker_logs
+    exclude_containers:
+      - arkd-proxy
+sinks:
+  default_file:
+    inputs:
+      - proxy
+      - task_docker_logs
+    type: file
+    path: "./tmp/logs/vector-%Y-%m-%d.log"
+    encoding:
+      codec: json

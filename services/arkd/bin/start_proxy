@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+docker pull jqtype/rpxy
+
+docker run \
+  -v ./configs/rpxy/:/rpxy/config \
+  -e WATCH=true \
+  --net=host \
+  --name arkd-proxy \
+  --rm \
+  jqtype/rpxy
