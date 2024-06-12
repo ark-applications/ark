@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+docker run \
+  -e COLLECTOR_OTLP_ENABLED=true \
+  -p 16686:16686 \
+  -p 4318:4318 \
+  --rm \
+  --name ark-jaeger \
+  jaegertracing/all-in-one:latest

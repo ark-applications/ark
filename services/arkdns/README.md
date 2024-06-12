@@ -10,7 +10,11 @@ Each stack gets its own root domain.
 
 The `app_name` is optional, the stack will define a `root_app` that {deployment_name}.{stack_root_domain} should go to.
 
+TODO: Add support for CNAME records. internal queries can use a CNAME to get a container name from app name
+
 ## Admin API
+
+TODO: Update this
 
 **GET** `/v1/stacks/{stack_id}/deployments/{deployment_name}` - Returns DNS records for the deployment
 **POST** `/v1/stacks/{stack_id}/deployments/{deployment_name}` - Creates a new deployment

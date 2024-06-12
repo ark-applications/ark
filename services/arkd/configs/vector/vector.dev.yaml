@@ -11,11 +11,26 @@ sources:
     exclude_containers:
       - arkd-proxy
 sinks:
+  loki_tasks:
+    type: loki
+    inputs:
+      - task_docker_logs
+    endpoint: http://localhost:3100
+    encoding:
+      codec: json
+    labels:
+      source: vector
+      service_name: arkd_worker
+      deployment_name: "{{ label.arkd_deployment }}"
+      app_name: "{{ label.arkd_app }}"
+      stack_name: "{{ label.arkd_stack }}"
+      arkd_worker_id: "{{ label.arkd_worker_id }}"
+
   default_file:
+    type: file
     inputs:
       - proxy
       - task_docker_logs
-    type: file
     path: "./tmp/logs/vector-%Y-%m-%d.log"
     encoding:
       codec: json

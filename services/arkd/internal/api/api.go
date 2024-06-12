@@ -9,10 +9,11 @@ import (
 	"github.com/dkimot/ark/services/arkd/internal/config"
 	"github.com/dkimot/ark/services/arkd/internal/orca"
 	docker "github.com/docker/docker/client"
-  "github.com/justinas/alice"
+	"github.com/justinas/alice"
 	"github.com/rs/zerolog"
-  "github.com/rs/zerolog/hlog"
+	"github.com/rs/zerolog/hlog"
 	"go.etcd.io/bbolt"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func StartHttpServer(
@@ -31,6 +32,12 @@ func StartHttpServer(
 
 	// add middleware
   handler = addLoggerMiddleware(logger, handler)
+  handler = func(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+      operation := r.Method + " " + r.URL.String()
+      otelhttp.NewHandler(next, operation).ServeHTTP(w, r)
+    })
+  }(handler)
 
   addr := fmt.Sprintf(":%v", config.ApiPort)
 	server := &http.Server{

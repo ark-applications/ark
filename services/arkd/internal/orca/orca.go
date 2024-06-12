@@ -15,9 +15,13 @@ import (
 	docker "github.com/docker/docker/client"
 	"github.com/oklog/ulid/v2"
 	"github.com/rs/zerolog"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var ErrInsufficientResourcesAvailable = errors.New("orca: cannot schedule task, insufficient resources available")
+
+var otelName = "orca"
 
 type Orchestrator interface {
 	ListTasks(ctx context.Context) ([]arkd.Task, error)
@@ -30,7 +34,15 @@ type Orchestrator interface {
 }
 
 func Start(cfg config.Config, logger zerolog.Logger, moby *docker.Client, taskStore *arkd.TaskStore, pxy proxy.Proxy) (Orchestrator, error) {
-  o := &Orca{cfg: cfg, l: logger, moby: moby, taskStore: taskStore, proxy: pxy}
+  o := &Orca{
+    cfg: cfg, 
+    l: logger, 
+    moby: moby, 
+    taskStore: taskStore, 
+    proxy: pxy,
+
+    tracer: otel.Tracer(otelName),
+  }
 
 	go o.startWatcher()
 
@@ -44,6 +56,9 @@ type Orca struct {
 	mtx       sync.Mutex
 	taskStore *arkd.TaskStore
   proxy     proxy.Proxy
+
+  // observability
+  tracer    trace.Tracer
 }
 
 func (o *Orca) startWatcher() {
@@ -83,6 +98,10 @@ func (o *Orca) startWatcher() {
 }
 
 func (o *Orca) DestroyTask(ctx context.Context, taskId ulid.ULID, force bool) error {
+  var span trace.Span
+  ctx, span = o.tracer.Start(ctx, "destroy_task")
+  defer span.End()
+
 	task, err := o.taskStore.GetTask(ctx, taskId)
 	if err != nil {
 		return err
@@ -116,14 +135,26 @@ func (o *Orca) DestroyTask(ctx context.Context, taskId ulid.ULID, force bool) er
 }
 
 func (o *Orca) InspectTask(ctx context.Context, taskId ulid.ULID) (*arkd.Task, error) {
+  var span trace.Span
+  ctx, span = o.tracer.Start(ctx, "inspect_task")
+  defer span.End()
+
 	panic("unimplemented")
 }
 
 func (o *Orca) ListTasks(ctx context.Context) ([]arkd.Task, error) {
+  var span trace.Span
+  ctx, span = o.tracer.Start(ctx, "list_task")
+  defer span.End()
+
 	panic("unimplemented")
 }
 
 func (o *Orca) StartTask(ctx context.Context, taskDef arkd.TaskDefinition) ([]byte, error) {
+  var span trace.Span
+  ctx, span = o.tracer.Start(ctx, "start_task")
+  defer span.End()
+
   startedAt := time.Now()
   defer func()  {
     o.l.Debug().
@@ -150,10 +181,14 @@ func (o *Orca) StartTask(ctx context.Context, taskDef arkd.TaskDefinition) ([]by
 		return nil, ErrInsufficientResourcesAvailable
 	}
 
-  return startTask(ctx, taskDef, o.moby, o.taskStore, o.proxy)
+  return startTask(ctx, o.cfg.WorkerId, taskDef, o.moby, o.taskStore, o.proxy)
 }
 
 func (o *Orca) StopTask(ctx context.Context, taskId ulid.ULID, signal string) error {
+  var span trace.Span
+  ctx, span = o.tracer.Start(ctx, "stop_task")
+  defer span.End()
+
 	// verify task exists
 
 	// stop container
@@ -164,6 +199,10 @@ func (o *Orca) StopTask(ctx context.Context, taskId ulid.ULID, signal string) er
 }
 
 func (o *Orca) WakeTask(ctx context.Context, taskId ulid.ULID) error {
+  var span trace.Span
+  ctx, span = o.tracer.Start(ctx, "wake_task")
+  defer span.End()
+
 	// find stopped task
 
 	// start container

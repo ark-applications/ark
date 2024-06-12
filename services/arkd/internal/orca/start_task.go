@@ -21,6 +21,7 @@ import (
 
 func startTask(
   ctx context.Context, 
+  workerId string,
   taskDef arkd.TaskDefinition, 
   moby *docker.Client, 
   taskStore *arkd.TaskStore,
@@ -82,6 +83,10 @@ func startTask(
         "arkd": "1",
         "arkd_task_id": task.ID.String(),
         "arkd_qualified_name": task.QualifiedName(),
+        "arkd_deployment": task.DeploymentName,
+        "arkd_stack": task.StackName,
+        "arkd_app": task.AppName,
+        "arkd_worker_id": workerId,
       },
     }, 
     &container.HostConfig{

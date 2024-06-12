@@ -2,8 +2,8 @@
 
 if [ -z "$ARKD_WORKER_BIN_PATH" ]; then
   echo "Building and running dev"
-  $HOME/go/bin/gow run ./cmd/start/main.go
+  OTEL_SERVICE_NAME="arkd_worker" $HOME/go/bin/gow run ./cmd/start
 else
   echo "Running bin path"
-  $ARKD_WORKER_BIN_PATH $@
+  OTEL_SERVICE_NAME="arkd_worker" $ARKD_WORKER_BIN_PATH $@
 fi

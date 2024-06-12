@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+docker run \
+  -p 3000:3000 \
+  -p 3100:3100 \
+  -p 4317:4317 \
+  --rm \
+  --name ark-grafana \
+  grafana/otel-lgtm:latest

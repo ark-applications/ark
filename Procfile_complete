@@ -1,3 +1,5 @@
+ark_jaeger: bin/start_jaeger
+ark_grafana: bin/start_grafana
 arkd_worker: bin/start_worker
 arkd_proxy: bin/start_proxy
 arkd_vector: bin/start_logsink

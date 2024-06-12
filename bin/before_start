@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+
+echo "stopping ark-grafana if it exists, this may take a few seconds"
+docker stop ark-grafana
+

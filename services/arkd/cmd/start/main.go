@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -22,19 +23,21 @@ var (
 	ApiVersion = "alpha"
 )
 
-func run(ctx context.Context, _ []string, getenv func(string) string, _ io.Reader, stdout, _ io.Writer) error {
+func run(ctx context.Context, _ []string, getenv func(string) string, _ io.Reader, stdout, _ io.Writer) (err error) {
 	l := zerolog.New(stdout).With().
     Timestamp().
     Str("role", "arkd-worker").
     Logger()
 
-  m, err := otlp.NewExporter(
-    ctx,
-    otlp.WithInsecure(),
-  )
-  if err != nil {
-    return err
-  }
+  // Set up OpenTelemetry.
+	otelShutdown, err := setupOtelSdk(ctx)
+	if err != nil {
+		return
+	}
+	// Handle shutdown properly so nothing leaks.
+	defer func() {
+		err = errors.Join(err, otelShutdown(context.Background()))
+	}()
 
 	wid, err := getWorkerId(getenv("ARKD_WORKER_ID"))
 	if err != nil {
