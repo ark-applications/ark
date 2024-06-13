@@ -1,0 +1,37 @@
+stack = "babies-first-ark"
+
+root_app = "frontend"
+
+[apps.frontend]
+  type = "web"
+  repo_url = "github.com/dkimot/ark"
+  
+  [apps.frontend.build]
+    dockerfile = "example/frontend/Dockerfile"
+
+  [apps.frontend.http_service]
+    container_port = 8080
+
+[apps.backend]
+  type = "pserv"
+  repo_url = "github.com/dkimot/ark"
+
+  [apps.backend.build]
+    dockerfile = "example/backend/Dockerfile"
+
+  [apps.backend.env]
+    DATABASE_URL = "postgres"
+    DATABASE_USERNAME = "postgres"
+    DATABASE_PASSWORD = "postgres"
+
+[services.postgres]
+  image = "postgres"
+  
+  [services.postgres.env]
+    POSTGRES_USER = "postgres"
+    POSTGRES_PASSWORD = "postgres"
+    PGDATA = "/var/lib/postgresql/data/pgdata"
+  
+  [services.postgres.disks.pgdata]
+    mount_path = "/var/lib/postgresql/data/pgdata"
+    size = 5

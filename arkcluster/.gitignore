@@ -1,0 +1,7 @@
+arkcluster.db
+
+/builds/*
+!/builds/.keep
+!/tmp/.keep
+/tmp/logs/*
+!/tmp/logs/.keep
