@@ -7,9 +7,12 @@ import (
 	"os"
 
 	"github.com/rs/zerolog"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 
 	"github.com/dkimot/ark/arkcluster/internal/api"
 	"github.com/dkimot/ark/arkcluster/internal/config"
+	"github.com/dkimot/ark/arkcluster/internal/models"
 )
 
 var (
@@ -25,11 +28,22 @@ func run(ctx context.Context, _ []string, getenv func(string) string, _ io.Reade
   cfg := config.NewConfig(config.WithApiVersion(ApiVersion))
 
   // open DB
+  db, err := gorm.Open(sqlite.Open("ark.db"), &gorm.Config{})
+  if err != nil {
+    return err
+  }
+
+  if err := db.AutoMigrate(&models.Stack{}); err != nil {
+    return fmt.Errorf("could not automigrate stacks: %w", err)
+  }
+  if err := db.AutoMigrate(&models.Deployment{}); err != nil {
+    return fmt.Errorf("could not automigrate deployments: %w", err)
+  }
 
   // set up dependencies
 
   // start api
-  return api.StartHttpServer(l, cfg)
+  return api.StartHttpServer(l, cfg, db)
 }
 
 func main() {

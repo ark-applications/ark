@@ -10,6 +10,7 @@ type StackDefinition struct {
 }
 
 type AppDefinition struct {
+  Name string `toml:"-"`
   Type string `toml:"type"`
   RepoUrl string `toml:"repo_url"`
   Build AppBuildDefinition `toml:"build"`
@@ -51,6 +52,7 @@ type AppHttpServiceDefinition struct {
 }
 
 type ServiceDefinition struct {
+  Name string `toml:"-"`
   Image string `toml:"image"`
   RepoUrl string `toml:"repo_url"`
   Dockerfile string `toml:"dockerfile"`

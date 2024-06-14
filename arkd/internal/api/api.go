@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dkimot/ark/services/arkd/internal/arkd"
-	"github.com/dkimot/ark/services/arkd/internal/config"
-	"github.com/dkimot/ark/services/arkd/internal/orca"
+	"github.com/dkimot/ark/arkd/internal/arkd"
+	"github.com/dkimot/ark/arkd/internal/config"
+	"github.com/dkimot/ark/arkd/internal/orca"
 	docker "github.com/docker/docker/client"
 	"github.com/justinas/alice"
 	"github.com/rs/zerolog"

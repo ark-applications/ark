@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dkimot/ark/services/arkd/internal/arkd"
-	"github.com/dkimot/ark/services/arkd/internal/config"
-	"github.com/dkimot/ark/services/arkd/internal/orca"
+	"github.com/dkimot/ark/arkd/internal/arkd"
+	"github.com/dkimot/ark/arkd/internal/config"
+	"github.com/dkimot/ark/arkd/internal/orca"
 	"github.com/oklog/ulid/v2"
 )
 

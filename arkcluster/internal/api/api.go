@@ -7,13 +7,17 @@ import (
 
 	"github.com/dkimot/ark/arkcluster/internal/config"
 	"github.com/rs/zerolog"
+	"gorm.io/gorm"
 )
 
 func StartHttpServer(
   logger zerolog.Logger,
   config config.Config,
+  db *gorm.DB,
 ) error {
   mux := http.NewServeMux()
+
+  addRoutes(mux, config, db)
 
   var handler http.Handler = mux
 

@@ -1,7 +1,7 @@
 package config
 
 const (
-  DefaultPort = 4500
+  DefaultPort = 4400
 )
 
 type Config struct {

@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dkimot/ark/services/arkd/internal/arkd"
-	"github.com/dkimot/ark/services/arkd/internal/config"
-	"github.com/dkimot/ark/services/arkd/internal/proxy"
+	"github.com/dkimot/ark/arkd/internal/arkd"
+	"github.com/dkimot/ark/arkd/internal/config"
+	"github.com/dkimot/ark/arkd/internal/proxy"
 	"github.com/docker/docker/api/types/container"
 	docker "github.com/docker/docker/client"
 	"github.com/oklog/ulid/v2"

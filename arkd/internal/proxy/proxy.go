@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/BurntSushi/toml"
-	"github.com/dkimot/ark/services/arkd/internal/config"
+	"github.com/dkimot/ark/arkd/internal/config"
 	"github.com/oklog/ulid/v2"
 )
 

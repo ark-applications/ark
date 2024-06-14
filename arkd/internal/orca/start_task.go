@@ -7,13 +7,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dkimot/ark/services/arkd/internal/arkd"
-	"github.com/dkimot/ark/services/arkd/internal/proxy"
-	"github.com/dkimot/ark/services/arkd/pkg"
-	"github.com/docker/docker/api/types"
+	"github.com/dkimot/ark/arkd/internal/arkd"
+	"github.com/dkimot/ark/arkd/internal/proxy"
+	"github.com/dkimot/ark/arkd/pkg"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/network"
 	docker "github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/kozhurkin/pipers"
@@ -167,7 +167,7 @@ func pullImage(ctx context.Context, imageName string, moby *docker.Client) error
 }
 
 func findOrCreateNetwork(ctx context.Context, desiredNetworkName string, moby *docker.Client) (string, error) {
-			nets, err := moby.NetworkList(ctx, types.NetworkListOptions{
+			nets, err := moby.NetworkList(ctx, network.ListOptions{
 				Filters: filters.NewArgs(filters.Arg("name", desiredNetworkName)),
 			})
 			if err != nil {
@@ -178,11 +178,10 @@ func findOrCreateNetwork(ctx context.Context, desiredNetworkName string, moby *d
         return nets[0].ID, nil
 			}
 
-			netCreateOpts := types.NetworkCreate{
-				Driver:     "bridge",
-				EnableIPv6: false,
-				Labels:     map[string]string{"arkd": "1"},
-			}
+      netCreateOpts := network.CreateOptions{
+        Driver: "bridge",
+        Labels: map[string]string{"arkd": "1"},
+      }
 			netCreateResp, err := moby.NetworkCreate(ctx, desiredNetworkName, netCreateOpts)
 			if err != nil {
         return "", fmt.Errorf("could not create network: %w", err)

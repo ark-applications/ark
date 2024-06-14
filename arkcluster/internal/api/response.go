@@ -35,10 +35,6 @@ func status(err error) int {
 		return http.StatusBadRequest
 	}
 
-  if errors.Is(err, arkd.ErrNilTask) {
-    return http.StatusNotFound
-  }
-
 	return http.StatusInternalServerError
 }
 

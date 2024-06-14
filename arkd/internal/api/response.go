@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dkimot/ark/services/arkd/internal/arkd"
+	"github.com/dkimot/ark/arkd/internal/arkd"
 	"github.com/oklog/ulid/v2"
 )
 
